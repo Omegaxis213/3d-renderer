@@ -692,6 +692,7 @@ public class screen {
 		numOfTriangles=0;
 		maxNumOfVert=0;
 		numCulled=0;
+		int totDrawn=0;
 		newOccluders=new HashSet<Integer>();
 		for(int z=0;z<objects.size();z++)
 		{
@@ -707,20 +708,7 @@ public class screen {
 			double threeY=sinXrotCosYrot*(objects.get(z).z3-camera_z)+sinXrotSinYrot*(objects.get(z).x3-camera_x)+cosXrot*(objects.get(z).y3-camera_y);
 			double threeZ=cosXrotCosYrot*(objects.get(z).z3-camera_z)+cosXrotSinYrot*(objects.get(z).x3-camera_x)-sinXrot*(objects.get(z).y3-camera_y);
 
-			// double inverseOneZ=1/oneZ;
-			// double newOneX=oneX*inverseOneZ*640+320;
-			// double newOneY=oneY*inverseOneZ*640+320;
 
-			// double inverseTwoZ=1/twoZ;
-			// double newTwoX=twoX*inverseTwoZ*640+320;
-			// double newTwoY=twoY*inverseTwoZ*640+320;
-
-			// double inverseThreeZ=1/threeZ;
-			// double newThreeX=threeX*inverseThreeZ*640+320;
-			// double newThreeY=threeY*inverseThreeZ*640+320;
-
-			// if((objects.get(z).shade.name==null||!objects.get(z).shade.name.equals("Glass"))&&(newOneX-newTwoX)*(newThreeY-newTwoY)<(newThreeX-newTwoX)*(newOneY-newTwoY)) continue;//back-face culling
-			// if(!(objects.get(z).shade.name!=null&&objects.get(z).shade.name.equals("Aventador"))) continue;
 			//vector u is point 2 - point 1, vector v is point 3 - point 1
 			double uX=twoX-oneX;
 			double uY=twoY-oneY;
@@ -734,6 +722,26 @@ public class screen {
 			double normalZ=uX*vY-uY*vX;
 
 			if((objects.get(z).shade.name==null||!objects.get(z).shade.name.equals("Glass"))&&(normalX*oneX+normalY*oneY+normalZ*oneZ)>0) continue;
+
+			double bbMinX=Math.min(oneX,Math.min(twoX,threeX));
+			double bbMinY=Math.min(oneY,Math.min(twoY,threeY));
+			double bbMinZ=Math.min(oneZ,Math.min(twoZ,threeZ));
+			double bbMaxX=Math.max(oneX,Math.max(twoX,threeX));
+			double bbMaxY=Math.max(oneY,Math.max(twoY,threeY));
+			double bbMaxZ=Math.max(oneZ,Math.max(twoZ,threeZ));
+			double centerBBX=(bbMinX+bbMaxX)/2;
+			double centerBBY=(bbMinY+bbMaxY)/2;
+			double centerBBZ=(bbMinZ+bbMaxZ)/2;
+			double radius=Math.sqrt((bbMaxX-bbMinX)*(bbMaxX-bbMinX)+(bbMaxY-bbMinY)*(bbMaxY-bbMinY)+(bbMaxZ-bbMinZ)*(bbMaxZ-bbMinZ))/2;
+
+			if(centerBBX>centerBBZ/2||centerBBX<-centerBBZ/2||centerBBY>centerBBZ/2||centerBBY<-centerBBZ/2)
+			{
+				double min= Math.min(Math.abs(-Math.sqrt(2)/2*centerBBX+Math.sqrt(2)/2*centerBBZ),
+							Math.min(Math.abs(-Math.sqrt(2)/2*centerBBY+Math.sqrt(2)/2*centerBBZ),
+							Math.min(Math.abs(Math.sqrt(2)/2*centerBBX+Math.sqrt(2)/2*centerBBZ),
+									 Math.abs(Math.sqrt(2)/2*centerBBY+Math.sqrt(2)/2*centerBBZ))));
+				if(min<-radius) continue;//outside frustum
+			}
 
 			ArrayList<triangle> draw=new ArrayList<triangle>();
 			Vec3d origOne=new Vec3d(oneX,oneY,oneZ);
@@ -795,8 +803,8 @@ public class screen {
 				double inverseThreeZ=1/threeZ;
 				double newThreeX=threeX*inverseThreeZ*640+320;
 				double newThreeY=threeY*inverseThreeZ*640+320;
-				double minX=Math.min(newOneX,Math.min(newTwoX,newThreeX));
-				double maxX=Math.max(newOneX,Math.max(newTwoX,newThreeX));
+				// double minX=Math.min(newOneX,Math.min(newTwoX,newThreeX));
+				// double maxX=Math.max(newOneX,Math.max(newTwoX,newThreeX));
 				double minY=Math.min(newOneY,Math.min(newTwoY,newThreeY));
 				double maxY=Math.max(newOneY,Math.max(newTwoY,newThreeY));
 
@@ -904,6 +912,7 @@ public class screen {
 						// {
 							if(zbuffer[y*640+x]<interpolated_z)
 							{
+								totDrawn++;
 								flag1=false;
 								// num++;
 								// if(!zbufferUsed[y*640+x])
@@ -1024,6 +1033,7 @@ public class screen {
 									greenIntensity=0;
 								if(blueIntensity<0)
 									blueIntensity=0;
+								HOMMaps[7][y][x]=1;
 								if(objects.get(z).pixels!=null)
 								{
 									double[] colors=getTextureColor(curTextureX,curTextureY,objects.get(z).pixels);
@@ -1098,6 +1108,31 @@ public class screen {
 			// 	pixels[(int)newOneY*640+(int)newOneX]=new Color(0,255,0).getRGB();
 			
 			// numOccluded+=flag1?1:0;
+		}
+		int maxY=320;
+		int maxX=320;
+		for (int i = 6; i >= 0; i--) {
+			for (int y = 0; y < maxY; y++) {
+				for (int x = 0; x < maxX; x++) {
+					HOMMaps[i][y][x]=(HOMMaps[i+1][y*2][x*2]+HOMMaps[i+1][y*2][x*2+1]+HOMMaps[i+1][y*2+1][x*2]+HOMMaps[i+1][y*2+1][x*2+1])/4;
+				}
+			}
+			maxY/=2;
+			maxX/=2;
+		}
+		int size=320;
+		int offSet=0;
+		for (int a = 7 - 1; a >= 0; a--) {
+			for (int i = 0; i < size; i++) {
+				for (int j = 0; j < size; j++) {
+					int red=(int)((1-HOMMaps[a][i][j])*255)<<16;
+					int green=(int)((1-HOMMaps[a][i][j])*255)<<8;
+					int blue=(int)((1-HOMMaps[a][i][j])*255);
+					pixels[(i+offSet)*640+j]=red|green|blue;
+				}
+			}
+			offSet+=size;
+			size/=2;
 		}
 		// occluders.clear();
 		// render(BSPTree,pixels);
@@ -1223,6 +1258,7 @@ public class screen {
 		// System.out.println("number of occluded: "+numOccluded);
 		System.out.println("render time: "+(System.nanoTime()-timeCount));
 		System.out.println("fps: "+(1e9/fps));
+		System.out.println("total pixels drawn: "+totDrawn);
 		System.out.println();
 	    return pixels;
 	}
