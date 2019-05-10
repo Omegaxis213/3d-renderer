@@ -1122,17 +1122,20 @@ public class screen {
 		}
 		int size=320;
 		int offSet=0;
-		for (int a = 7 - 1; a >= 0; a--) {
-			for (int i = 0; i < size; i++) {
-				for (int j = 0; j < size; j++) {
-					int red=(int)((1-HOMMaps[a][i][j])*255)<<16;
-					int green=(int)((1-HOMMaps[a][i][j])*255)<<8;
-					int blue=(int)((1-HOMMaps[a][i][j])*255);
-					pixels[(i+offSet)*640+j]=red|green|blue;
+		if(key_listener.change1)
+		{
+			for (int a = 7 - 1; a >= 0; a--) {
+				for (int i = 0; i < size; i++) {
+					for (int j = 0; j < size; j++) {
+						int red=(int)((1-HOMMaps[a][i][j])*255)<<16;
+						int green=(int)((1-HOMMaps[a][i][j])*255)<<8;
+						int blue=(int)((1-HOMMaps[a][i][j])*255);
+						pixels[(i+offSet)*640+j]=red|green|blue;
+					}
 				}
+				offSet+=size;
+				size/=2;
 			}
-			offSet+=size;
-			size/=2;
 		}
 		// occluders.clear();
 		// render(BSPTree,pixels);
@@ -1236,16 +1239,16 @@ public class screen {
 		// 	}
 		// 	System.out.println(lowest);
 		// }
-		if(key_listener.change1)
-			for (int i = 0; i < 640; i++) {
-				for (int j = 0; j < 640; j++) {
-					double temp=HOMMaps[7][i][j]*255;
-					int red=(int)temp<<16;
-					int green=(int)temp<<8;
-					int blue=(int)temp;
-					pixels[i*640+j]=red+green+blue;
-				}
-			}
+		// if(key_listener.change1)
+		// 	for (int i = 0; i < 640; i++) {
+		// 		for (int j = 0; j < 640; j++) {
+		// 			double temp=HOMMaps[7][i][j]*255;
+		// 			int red=(int)temp<<16;
+		// 			int green=(int)temp<<8;
+		// 			int blue=(int)temp;
+		// 			pixels[i*640+j]=red+green+blue;
+		// 		}
+		// 	}
 		prevCull=numCulled;
 		// System.out.println(Arrays.toString(pixelsDrawn.arr[320]));
 		// System.out.println("total occluded: "+totOccluded+" total triangles: "+totTriangles);
