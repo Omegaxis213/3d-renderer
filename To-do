@@ -3,3 +3,4 @@ Make optimizations on the rendering.
 Implement a working, efficient binary space partition tree
 Implement hierarchical occlusion map
 Optimize the frustrum culling to not just be clipping and actually use bounding boxes/spheres
+Maybe try using a 2d segtree to cull some objects preemptively?
